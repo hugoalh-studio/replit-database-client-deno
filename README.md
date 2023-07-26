@@ -50,20 +50,27 @@ import ReplitDatabaseClient from "<URL>";// Default Import (Class `ReplitDatabas
 #### Class
 
 - ```ts
-  new ReplitDatabaseClient(options: ReplitDatabaseOptions = {}): ReplitDatabaseClient;
+  new ReplitDatabaseClient(options: ReplitDatabaseClientOptions = {}): ReplitDatabaseClient;
     .clear(): Promise<void>;
-    .delete(...keys: (string | string[])[]): Promise<void>;
-    .get(key: string): Promise<JsonValue>;
-    .keys(prefix = ""): Promise<string[]>;
+    .delete(key: string): Promise<void>;
+    .delete(keys: string[]): Promise<void>;
+    .delete(...keys: string[]): Promise<void>;
+    .entries(): Promise<IterableIterator<[string, JsonValue]>>;
+    .get(key: string): Promise<JsonValue | undefined>;
+    .has(key: string): Promise<boolean>;
+    .keys(prefix: string = ""): Promise<string[]>;
+    .keys(filter: RegExp): Promise<string[]>;
     .list(): Promise<Map<string, JsonValue>>;
     .set(key: string, value: JsonValue): Promise<void>;
     .set(table: Map<string, JsonValue> | Record<string, JsonValue>): Promise<void>;
+    .size: Promise<number>;
+    .values(): Promise<IterableIterator<JsonValue>>;
   ```
 
 #### Interface / Type
 
 - ```ts
-  interface ReplitDatabaseOptions {
+  interface ReplitDatabaseClientOptions {
     allSettled: boolean = false;// For operations of clear, and batch/bulk delete and set, whether to await for all of the operations are all settled (resolved or rejected) instead of ignore remain operations when any of the operation is rejected.
     retry: number = 1;// Whether to retry when exceed the rate limits.
     url?: string | URL;// Custom database URL.

@@ -5,20 +5,20 @@ type CommonErrorType = string | Error | RangeError | ReferenceError | SyntaxErro
  * @class ReplitDatabaseClientErrorStack
  */
 class ReplitDatabaseClientErrorStack {
-	#storage: CommonErrorType[] = [];
+	#stack: CommonErrorType[] = [];
 	get length(): number {
-		return this.#storage.length;
+		return this.#stack.length;
 	}
 	print(): string {
-		return Array.from(new Set([...this.#storage.map((error: CommonErrorType): string => {
+		return Array.from(new Set([...this.#stack.map((error: CommonErrorType): string => {
 			return ((typeof error === "string") ? error : `${error.name}: ${error.message}`).replace(/\r?\n/gu, " ");
 		})])).join("\n");
 	}
 	push(...error: CommonErrorType[]): void {
-		this.#storage.push(...error);
+		this.#stack.push(...error);
 	}
 }
-interface ReplitDatabaseOptions {
+interface ReplitDatabaseClientOptions {
 	/**
 	 * @property allSettled
 	 * @description For operations of clear, and batch/bulk delete and set, whether to await for all of the operations are all settled (resolved or rejected) instead of ignore remain operations when any of the operation is rejected.
@@ -50,9 +50,9 @@ class ReplitDatabaseClient {
 	/**
 	 * @constructor
 	 * @description Create a new Replit Database client instance.
-	 * @param {ReplitDatabaseOptions} [options={}] Options.
+	 * @param {ReplitDatabaseClientOptions} [options={}] Options.
 	 */
-	constructor(options: ReplitDatabaseOptions = {}) {
+	constructor(options: ReplitDatabaseClientOptions = {}) {
 		if (typeof options.allSettled === "boolean") {
 			this.#allSettled = options.allSettled;
 		} else if (typeof options.allSettled !== "undefined") {
@@ -88,7 +88,7 @@ class ReplitDatabaseClient {
 	/**
 	 * @access private
 	 * @method transaction
-	 * @description This provide better fetch with retry.
+	 * @description This provide better fetch with retry. (This should replaced when an alternative is found.)
 	 * @param {Parameters<typeof fetch>} fetchParameters
 	 * @returns {Promise<Response>}
 	 */
@@ -109,7 +109,7 @@ class ReplitDatabaseClient {
 	}
 	/**
 	 * @method clear
-	 * @description Clear the database.
+	 * @description Clear all of the entries.
 	 * @returns {Promise<void>}
 	 */
 	async clear(): Promise<void> {
@@ -117,11 +117,26 @@ class ReplitDatabaseClient {
 	}
 	/**
 	 * @method delete
-	 * @description Delete key(s).
-	 * @param {(string | string[])[]} keys Key(s).
+	 * @description Delete a key.
+	 * @param {string} key Key.
 	 * @returns {Promise<void>}
 	 */
-	async delete(...keys: (string | string[])[]): Promise<void> {
+	async delete(key: string): Promise<void>;
+	/**
+	 * @method delete
+	 * @description Delete keys.
+	 * @param {string[]} keys Keys.
+	 * @returns {Promise<void>}
+	 */
+	async delete(keys: string[]): Promise<void>;
+	/**
+	 * @method delete
+	 * @description Delete keys.
+	 * @param {...string} keys Keys.
+	 * @returns {Promise<void>}
+	 */
+	async delete(...keys: string[]): Promise<void>;
+	async delete(...keys: string[] | [string[]]): Promise<void> {
 		let errorStacks: ReplitDatabaseClientErrorStack = new ReplitDatabaseClientErrorStack();
 		for (let key of keys.flat(Infinity)) {
 			try {
@@ -147,12 +162,20 @@ class ReplitDatabaseClient {
 		}
 	}
 	/**
+	 * @method entries
+	 * @description List entries through iterator.
+	 * @returns {Promise<IterableIterator<[string, JsonValue]>>} Entries iterator.
+	 */
+	async entries(): Promise<IterableIterator<[string, JsonValue]>> {
+		return (await this.list()).entries();
+	}
+	/**
 	 * @method get
 	 * @description Get a value by key.
 	 * @param {string} key Key.
-	 * @returns {Promise<JsonValue>} Value.
+	 * @returns {Promise<JsonValue | undefined>} Value.
 	 */
-	async get(key: string): Promise<JsonValue> {
+	async get(key: string): Promise<JsonValue | undefined> {
 		if (!(typeof key === "string" && key.length > 0)) {
 			throw new TypeError(`Argument \`key\` must be type of string (non-empty)!`);
 		}
@@ -164,22 +187,39 @@ class ReplitDatabaseClient {
 		if (!response.ok) {
 			throw new Error(`Unable to get the value from key \`${key}\` with status \`${response.status} ${response.statusText}\`: ${raw}`);
 		}
-		return ((raw.length > 0) ? JSON.parse(raw) : null);
+		return ((raw.length > 0) ? JSON.parse(raw) : undefined);
+	}
+	/**
+	 * @method has
+	 * @description Whether an entry with the specified key exist.
+	 * @param {string} key Key.
+	 * @returns {Promise<boolean>} Result.
+	 */
+	async has(key: string): Promise<boolean> {
+		return (typeof (await this.get(key)) !== "undefined");
 	}
 	/**
 	 * @method keys
-	 * @description Get keys that start with a prefix, or get all of the keys.
-	 * @param {string} [prefix=""] Filter keys start with a prefix.
+	 * @description Get all of the keys, optionally filter with a prefix.
+	 * @param {string} [prefix=""] Filter keys that with a prefix.
 	 * @returns {Promise<string[]>} Keys.
 	 */
-	async keys(prefix = ""): Promise<string[]> {
-		if (typeof prefix !== "string") {
-			throw new TypeError(`Argument \`prefix\` must be type of string!`);
+	keys(prefix?: string): Promise<string[]>;
+	/**
+	 * @method keys
+	 * @description Get all of the keys, optionally filter with a regular expression.
+	 * @param {RegExp} filter Filter keys with a regular expression.
+	 * @returns {Promise<string[]>} Keys.
+	 */
+	keys(filter: RegExp): Promise<string[]>;
+	async keys(filter: string | RegExp = ""): Promise<string[]> {
+		if (typeof filter !== "string" && !(filter instanceof RegExp)) {
+			throw new TypeError(`Argument \`filter/prefix\` must be instance of RegExp, or type of string!`);
 		}
 		let requestUrl: URL = new URL(this.#url);
 		requestUrl.searchParams.set("encode", "true");
-		if (prefix.length > 0) {
-			requestUrl.searchParams.set("prefix", prefix);
+		if (typeof filter === "string" && filter.length > 0) {
+			requestUrl.searchParams.set("prefix", filter);
 		}
 		let response: Response = await this.#transaction(requestUrl, {
 			method: "GET",
@@ -191,18 +231,22 @@ class ReplitDatabaseClient {
 		}
 		return raw.split(/\r?\n/gu).map((key: string): string => {
 			return decodeURIComponent(key);
+		}).filter((key: string): boolean => {
+			return ((filter instanceof RegExp) ? filter.test(key) : true);
 		});
 	}
 	/**
 	 * @method list
-	 * @description List database.
-	 * @returns {Promise<Map<string, JsonValue>>} Database.
+	 * @description List entries through `Map`.
+	 * @returns {Promise<Map<string, JsonValue>>} Entries through `Map`.
 	 */
 	async list(): Promise<Map<string, JsonValue>> {
 		let result: Map<string, JsonValue> = new Map<string, JsonValue>();
-		let keys: string[] = await this.keys();
-		for (let key of keys) {
-			result.set(key, await this.get(key));
+		for (let key of (await this.keys())) {
+			let value: JsonValue | undefined = await this.get(key);
+			if (typeof value !== "undefined") {
+				result.set(key, value);
+			}
 		}
 		return result;
 	}
@@ -249,17 +293,34 @@ class ReplitDatabaseClient {
 				},
 				method: "POST",
 			});
-			let raw: string = await response.text();
 			if (!response.ok) {
-				throw new Error(`Unable to set key \`${key}\` with status \`${response.status} ${response.statusText}\`: ${raw}`);
+				throw new Error(`Unable to set key \`${key}\` with status \`${response.status} ${response.statusText}\`: ${await response.text()}`);
 			}
 		} else {
 			throw new SyntaxError(`Arguments count is not match!`);
 		}
 	}
+	/**
+	 * @method size
+	 * @description Get the size.
+	 * @returns {Promise<number>} Size.
+	 */
+	get size(): Promise<number> {
+		return this.keys().then((keys: string[]): number => {
+			return keys.length;
+		});
+	}
+	/**
+	 * @method values
+	 * @description Get all of the values.
+	 * @returns {Promise<IterableIterator<JsonValue>>} Values.
+	 */
+	async values(): Promise<IterableIterator<JsonValue>> {
+		return (await this.list()).values();
+	}
 }
 export default ReplitDatabaseClient;
 export {
 	ReplitDatabaseClient,
-	type ReplitDatabaseOptions
+	type ReplitDatabaseClientOptions
 };
