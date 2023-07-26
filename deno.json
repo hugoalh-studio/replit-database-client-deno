@@ -3,7 +3,9 @@
 	"fmt": {
 		"options": {
 			"indentWidth": 4,
-			"semiColons": false,
+			"lineWidth": 800,
+			"proseWrap": "preserve",
+			"semiColons": true,
 			"singleQuote": false,
 			"useTabs": true
 		}
