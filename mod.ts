@@ -72,9 +72,12 @@ class ReplitDatabaseClient {
 		) {
 			let urlLookUp: URL = new URL(options.url);
 			if (!(/^https?:$/u.test(urlLookUp.protocol))) {
-				throw new SyntaxError(`\`${urlLookUp.protocol}\` is not a valid Replit Database protocol!`);
+				throw new SyntaxError(`\`${urlLookUp.protocol}\` is not a valid URL protocol!`);
 			}
-			this.#url = new URL(urlLookUp.origin);
+			if (!["kv.replit.com"].includes(urlLookUp.hostname)) {
+				throw new SyntaxError(`\`${urlLookUp.hostname}\` is not a valid Replit Database hostname!`);
+			}
+			this.#url = new URL(`${urlLookUp.origin}${urlLookUp.pathname}`);
 		} else if (typeof options.url === "undefined") {
 			try {
 				this.#url = new URL(Deno.env.get("REPLIT_DB_URL") ?? "");
@@ -146,7 +149,7 @@ class ReplitDatabaseClient {
 				if (!(typeof key === "string" && key.length > 0)) {
 					throw new TypeError(`Argument \`key\` must be type of string (non-empty)!`);
 				}
-				let response: Response = await this.#transaction(new URL(key, this.#url), {
+				let response: Response = await this.#transaction(`${this.#url.toString()}/${key}`, {
 					method: "DELETE",
 					redirect: "error"
 				});
@@ -182,7 +185,7 @@ class ReplitDatabaseClient {
 		if (!(typeof key === "string" && key.length > 0)) {
 			throw new TypeError(`Argument \`key\` must be type of string (non-empty)!`);
 		}
-		let response: Response = await this.#transaction(new URL(key, this.#url), {
+		let response: Response = await this.#transaction(`${this.#url.toString()}/${key}`, {
 			method: "GET",
 			redirect: "error"
 		});
@@ -290,7 +293,7 @@ class ReplitDatabaseClient {
 			if (!(typeof key === "string" && key.length > 0)) {
 				throw new TypeError(`Argument \`key\` must be type of string (non-empty)!`);
 			}
-			let response: Response = await this.#transaction(new URL(this.#url), {
+			let response: Response = await this.#transaction(this.#url, {
 				body: `${encodeURIComponent(key)}=${encodeURIComponent(JSON.stringify(value))}`,
 				headers: {
 					"Content-Type": "application/x-www-form-urlencoded"
