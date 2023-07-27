@@ -19,6 +19,7 @@ A Deno module of Replit Database client.
 
 ### 🌟 Feature
 
+- Additional functions to reduce database operations.
 - Support retries when exceed the rate limits.
 
 ## 📚 Documentation
@@ -55,16 +56,19 @@ import ReplitDatabaseClient from "<URL>";// Default Import (Class `ReplitDatabas
     .delete(key: string): Promise<void>;
     .delete(keys: string[]): Promise<void>;
     .delete(...keys: string[]): Promise<void>;
-    .entries(): Promise<IterableIterator<[string, JsonValue]>>;
+    .entries(keysPrefix: string = ""): Promise<IterableIterator<[string, JsonValue]>>;
+    .entries(keysFilter: RegExp): Promise<IterableIterator<[string, JsonValue]>>;
     .get(key: string): Promise<JsonValue | undefined>;
     .has(key: string): Promise<boolean>;
     .keys(prefix: string = ""): Promise<string[]>;
     .keys(filter: RegExp): Promise<string[]>;
-    .list(): Promise<Map<string, JsonValue>>;
+    .list(keysPrefix: string = ""): Promise<Map<string, JsonValue>>;
+    .list(keysFilter: RegExp): Promise<Map<string, JsonValue>>;
     .set(key: string, value: JsonValue): Promise<void>;
     .set(table: Map<string, JsonValue> | Record<string, JsonValue>): Promise<void>;
     .size: Promise<number>;
-    .values(): Promise<IterableIterator<JsonValue>>;
+    .values(keysPrefix: string = ""): Promise<IterableIterator<JsonValue>>;
+    .values(keysFilter: RegExp): Promise<IterableIterator<JsonValue>>;
   ```
 
 #### Interface / Type
@@ -75,4 +79,13 @@ import ReplitDatabaseClient from "<URL>";// Default Import (Class `ReplitDatabas
     retry: number = 1;// Whether to retry when exceed the rate limits.
     url?: string | URL;// Custom database URL.
   }
+  ```
+
+### Example
+
+- ```ts
+  const db = new ReplitDatabaseClient();
+  await db.set("foo", "bar");
+  await db.get("foo");//=> "bar"
+  await db.get("bar");//=> undefined
   ```
