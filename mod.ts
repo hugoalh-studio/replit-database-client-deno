@@ -1,4 +1,4 @@
-import { type JsonValue } from "https://deno.land/std@0.195.0/json/common.ts";
+import { type JsonValue } from "https://deno.land/std@0.196.0/json/common.ts";
 type CommonErrorType = string | Error | RangeError | ReferenceError | SyntaxError | TypeError;
 /**
  * @access private
