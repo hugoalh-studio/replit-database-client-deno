@@ -81,6 +81,9 @@ class ReplitDatabaseClient {
 			} catch {
 				throw new Error(`Unable to access environment variable \`REPLIT_DB_URL\`, or it's value is not a valid URL!`);
 			}
+			setInterval((): void => {// This interval somehow exists in the official NodeJS library.
+				this.#url = new URL(Deno.env.get("REPLIT_DB_URL") ?? this.#url);
+			}, 1800000);
 		} else {
 			throw new TypeError(`Argument \`options.url\` must be instance of URL, or type of string or undefined!`);
 		}
@@ -218,9 +221,7 @@ class ReplitDatabaseClient {
 		}
 		let requestUrl: URL = new URL(this.#url);
 		requestUrl.searchParams.set("encode", "true");
-		if (typeof filter === "string" && filter.length > 0) {
-			requestUrl.searchParams.set("prefix", filter);
-		}
+		requestUrl.searchParams.set("prefix", ((typeof filter === "string") ? filter : ""));
 		let response: Response = await this.#transaction(requestUrl, {
 			method: "GET",
 			redirect: "error"
@@ -228,6 +229,9 @@ class ReplitDatabaseClient {
 		let raw: string = await response.text();
 		if (!response.ok) {
 			throw new Error(`Unable to get keys with status \`${response.status} ${response.statusText}\`: ${raw}`);
+		}
+		if (raw.length === 0) {
+			return [];
 		}
 		return raw.split(/\r?\n/gu).map((key: string): string => {
 			return decodeURIComponent(key);
