@@ -28,7 +28,7 @@ A Deno module of Replit Database client.
 
 - Deno >= v1.35.0
   - **`allow-env` (Allow Environment Variables):** `REPLIT_DB_URL`
-  - **`allow-net` (Allow Network Addresses):** *All*
+  - **`allow-net` (Allow Network Addresses):** `kv.replit.com`
 
 ```ts
 /* Either */
