@@ -83,9 +83,15 @@ import ReplitDatabaseClient from "<URL>";// Default Import (Class `ReplitDatabas
 
 ### Example
 
-- ```ts
-  const db = new ReplitDatabaseClient();
-  await db.set("foo", "bar");
-  await db.get("foo");//=> "bar"
-  await db.get("bar");//=> undefined
-  ```
+```ts
+const db = new ReplitDatabaseClient();
+
+await db.set("foo", "bar");
+//=> void
+
+await db.get("foo");
+//=> "bar"
+
+await db.get("bar");
+//=> undefined
+```
