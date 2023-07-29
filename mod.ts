@@ -1,8 +1,8 @@
 import { type JsonValue } from "https://deno.land/std@0.196.0/json/common.ts";
 type CommonErrorType = string | Error | RangeError | ReferenceError | SyntaxError | TypeError;
 /**
+ * Replit Database client error stack.
  * @access private
- * @class ReplitDatabaseClientErrorStack
  */
 class ReplitDatabaseClientErrorStack {
 	#stack: CommonErrorType[] = [];
@@ -18,38 +18,36 @@ class ReplitDatabaseClientErrorStack {
 		this.#stack.push(...error);
 	}
 }
-interface ReplitDatabaseClientOptions {
+/**
+ * Replit Database client options.
+ */
+export interface ReplitDatabaseClientOptions {
 	/**
-	 * @property allSettled
-	 * @description For operations of clear, and batch/bulk delete and set, whether to await for all of the operations are all settled (resolved or rejected) instead of ignore remain operations when any of the operation is rejected.
+	 * For operations of clear, and batch/bulk delete and set, whether to await for all of the operations are all settled (resolved or rejected) instead of ignore remain operations when any of the operation is rejected.
 	 * @default false
 	 */
 	allSettled?: boolean;
 	/**
-	 * @property retry
-	 * @description Whether to retry when exceed the rate limits.
+	 * Whether to retry when exceed the rate limits.
 	 * @default 1
 	 */
 	retry?: number;
 	/**
-	 * @property url
-	 * @description Custom database URL.
+	 * Custom database URL.
 	 * @default undefined
 	 */
 	url?: string | URL;
 }
 /**
- * @class ReplitDatabaseClient
- * @description Replit Database is a simple, user-friendly key-value store inside of every Repl, every Repl can access and interact with its own unique Replit Database.
+ * Replit Database is a simple, user-friendly key-value store inside of every Repl, every Repl can access and interact with its own unique Replit Database.
  */
-class ReplitDatabaseClient {
+export class ReplitDatabaseClient {
 	static exceedRateLimitsStatusCode = 429;
 	#allSettled = false;
 	#retry = 1;
 	#url: URL;
 	/**
-	 * @constructor
-	 * @description Create a new Replit Database client instance.
+	 * Create a new Replit Database client instance.
 	 * @param {ReplitDatabaseClientOptions} [options={}] Options.
 	 */
 	constructor(options: ReplitDatabaseClientOptions = {}) {
@@ -92,11 +90,10 @@ class ReplitDatabaseClient {
 		}
 	}
 	/**
+	 * This provide better fetch with retry. (Will replaced when an alternative is found.)
 	 * @access private
-	 * @method transaction
-	 * @description This provide better fetch with retry. (This should replaced when an alternative is found.)
-	 * @param {Parameters<typeof fetch>} fetchParameters
-	 * @returns {Promise<Response>}
+	 * @param {Parameters<typeof fetch>} fetchParameters `fetch` parameters.
+	 * @returns {Promise<Response>} Response.
 	 */
 	async #transaction(...fetchParameters: Parameters<typeof fetch>): Promise<Response> {
 		for (let time = 0; time < this.#retry + 1; time += 1) {
@@ -114,30 +111,26 @@ class ReplitDatabaseClient {
 		throw new Error(`Unable to transact with Replit Database because of exceed the rate limits and retries!`);
 	}
 	/**
-	 * @method clear
-	 * @description Clear all of the entries.
+	 * Clear all of the entries.
 	 * @returns {Promise<void>}
 	 */
 	async clear(): Promise<void> {
 		return this.delete(await this.keys());
 	}
 	/**
-	 * @method delete
-	 * @description Delete a key.
+	 * Delete a key.
 	 * @param {string} key Key.
 	 * @returns {Promise<void>}
 	 */
 	async delete(key: string): Promise<void>;
 	/**
-	 * @method delete
-	 * @description Delete keys.
+	 * Delete keys.
 	 * @param {string[]} keys Keys.
 	 * @returns {Promise<void>}
 	 */
 	async delete(keys: string[]): Promise<void>;
 	/**
-	 * @method delete
-	 * @description Delete keys.
+	 * Delete keys.
 	 * @param {...string} keys Keys.
 	 * @returns {Promise<void>}
 	 */
@@ -168,15 +161,13 @@ class ReplitDatabaseClient {
 		}
 	}
 	/**
-	 * @method entries
-	 * @description List entries through iterator, optionally filter keys with prefix.
+	 * List entries through iterator, optionally filter keys with prefix.
 	 * @param {string} [keysPrefix=""] Filter keys that with prefix.
 	 * @returns {Promise<IterableIterator<[string, JsonValue]>>} Entries iterator.
 	 */
 	entries(keysPrefix?: string): Promise<IterableIterator<JsonValue>>;
 	/**
-	 * @method entries
-	 * @description List entries through iterator, optionally filter keys with regular expression.
+	 * List entries through iterator, optionally filter keys with regular expression.
 	 * @param {RegExp} keysFilter Filter keys with regular expression.
 	 * @returns {Promise<IterableIterator<[string, JsonValue]>>} Entries iterator.
 	 */
@@ -186,8 +177,7 @@ class ReplitDatabaseClient {
 		return (await this.list(keysFilter)).entries();
 	}
 	/**
-	 * @method get
-	 * @description Get a value by key.
+	 * Get a value by key.
 	 * @param {string} key Key.
 	 * @returns {Promise<JsonValue | undefined>} Value.
 	 */
@@ -206,8 +196,7 @@ class ReplitDatabaseClient {
 		return ((raw.length > 0) ? JSON.parse(raw) : undefined);
 	}
 	/**
-	 * @method has
-	 * @description Whether an entry with the specified key exist.
+	 * Whether an entry with the specified key exist.
 	 * @param {string} key Key.
 	 * @returns {Promise<boolean>} Result.
 	 */
@@ -215,15 +204,13 @@ class ReplitDatabaseClient {
 		return (typeof (await this.get(key)) !== "undefined");
 	}
 	/**
-	 * @method keys
-	 * @description Get all of the keys, optionally filter with prefix.
+	 * Get all of the keys, optionally filter with prefix.
 	 * @param {string} [prefix=""] Filter with prefix.
 	 * @returns {Promise<string[]>} Keys.
 	 */
 	keys(prefix?: string): Promise<string[]>;
 	/**
-	 * @method keys
-	 * @description Get all of the keys, optionally filter with regular expression.
+	 * Get all of the keys, optionally filter with regular expression.
 	 * @param {RegExp} filter Filter with regular expression.
 	 * @returns {Promise<string[]>} Keys.
 	 */
@@ -253,15 +240,13 @@ class ReplitDatabaseClient {
 		});
 	}
 	/**
-	 * @method list
-	 * @description List entries through `Map`, optionally filter keys with prefix.
+	 * List entries through `Map`, optionally filter keys with prefix.
 	 * @param {string} [keysPrefix=""] Filter keys that with prefix.
 	 * @returns {Promise<Map<string, JsonValue>>} Entries through `Map`.
 	 */
 	list(keysPrefix?: string): Promise<Map<string, JsonValue>>;
 	/**
-	 * @method list
-	 * @description List entries through `Map`, optionally filter keys with regular expression.
+	 * List entries through `Map`, optionally filter keys with regular expression.
 	 * @param {RegExp} keysFilter Filter keys with regular expression.
 	 * @returns {Promise<string[]>} Keys.
 	 */
@@ -278,16 +263,14 @@ class ReplitDatabaseClient {
 		return result;
 	}
 	/**
-	 * @method set
-	 * @description Set a key-value.
+	 * Set a key-value.
 	 * @param {string} key Key.
 	 * @param {JsonValue} value Value.
 	 * @returns {Promise<void>}
 	 */
 	set(key: string, value: JsonValue): Promise<void>;
 	/**
-	 * @method set
-	 * @description Set key-value.
+	 * Set key-value.
 	 * @param {Map<string, JsonValue> | Record<string, JsonValue>} table Table.
 	 * @returns {Promise<void>}
 	 */
@@ -328,8 +311,7 @@ class ReplitDatabaseClient {
 		}
 	}
 	/**
-	 * @method size
-	 * @description Get the size.
+	 * Get the size.
 	 * @returns {Promise<number>} Size.
 	 */
 	get size(): Promise<number> {
@@ -338,15 +320,13 @@ class ReplitDatabaseClient {
 		});
 	}
 	/**
-	 * @method values
-	 * @description Get all of the values, optionally filter keys with prefix.
+	 * Get all of the values, optionally filter keys with prefix.
 	 * @param {string} [keysPrefix=""] Filter keys that with prefix.
 	 * @returns {Promise<IterableIterator<JsonValue>>} Values.
 	 */
 	values(keysPrefix?: string): Promise<IterableIterator<JsonValue>>;
 	/**
-	 * @method values
-	 * @description Get all of the values, optionally filter keys with regular expression.
+	 * Get all of the values, optionally filter keys with regular expression.
 	 * @param {RegExp} keysFilter Filter keys with regular expression.
 	 * @returns {Promise<IterableIterator<JsonValue>>} Values.
 	 */
@@ -357,7 +337,3 @@ class ReplitDatabaseClient {
 	}
 }
 export default ReplitDatabaseClient;
-export {
-	ReplitDatabaseClient,
-	type ReplitDatabaseClientOptions
-};
