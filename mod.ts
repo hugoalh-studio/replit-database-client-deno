@@ -1,4 +1,4 @@
-import { type JsonValue } from "https://deno.land/std@0.196.0/json/common.ts";
+import { type JsonValue } from "https://deno.land/std@0.197.0/json/common.ts";
 type CommonErrorType = string | Error | RangeError | ReferenceError | SyntaxError | TypeError;
 /**
  * Replit Database client error stack.
