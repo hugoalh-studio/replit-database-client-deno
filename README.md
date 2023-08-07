@@ -22,7 +22,7 @@ A Deno module of Replit Database client.
 - Additional functions to reduce database operations.
 - Support retries when exceed the rate limits.
 
-## 📚 Documentation
+## 📓 Documentation
 
 ### Getting Started
 
