@@ -10,8 +10,8 @@ A Deno module of Replit Database client.
 
 ## 🌟 Feature
 
-- Additional functions to reduce database operations.
-- Support retries when exceed the rate limits.
+- Additional functions to reduce the amount of the database operations.
+- Better database operations with [`exFetch`](https://github.com/hugoalh-studio/exfetch-deno).
 
 ## 📓 Documentation
 
