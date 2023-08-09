@@ -56,7 +56,7 @@ import ReplitDatabaseClient from "<URL>";// Default Import (Class `ReplitDatabas
     list(keysFilter: RegExp): Promise<Map<string, JsonValue>>;
     set(key: string, value: JsonValue): Promise<void>;
     set(table: Map<string, JsonValue> | Record<string, JsonValue>): Promise<void>;
-    get size: Promise<number>;
+    get size(): Promise<number>;
     values(keysPrefix: string = ""): Promise<IterableIterator<JsonValue>>;
     values(keysFilter: RegExp): Promise<IterableIterator<JsonValue>>;
   }
