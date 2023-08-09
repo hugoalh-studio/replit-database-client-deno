@@ -1,4 +1,5 @@
 import { type JsonValue } from "https://deno.land/std@0.197.0/json/common.ts";
+import { ExFetch, type ExFetchOptions, type ExFetchRetryOptions } from "https://deno.land/x/exfetch@v0.1.2/exfetch.ts";
 type CommonErrorType = string | Error | RangeError | ReferenceError | SyntaxError | TypeError;
 /**
  * Replit Database client error stack.
@@ -21,17 +22,17 @@ class ReplitDatabaseClientErrorStack {
 /**
  * Replit Database client options.
  */
-export interface ReplitDatabaseClientOptions {
+export interface ReplitDatabaseClientOptions extends Pick<ExFetchOptions, "event" | "timeout"> {
 	/**
 	 * For operations of clear, and batch/bulk delete and set, whether to await for all of the operations are all settled (resolved or rejected) instead of ignore remain operations when any of the operation is rejected.
 	 * @default false
 	 */
 	allSettled?: boolean;
 	/**
-	 * Whether to retry when exceed the rate limits.
-	 * @default 1
+	 * Retry options.
+	 * @default {}
 	 */
-	retry?: number;
+	retry?: number | Omit<ExFetchRetryOptions, "condition">;
 	/**
 	 * Custom database URL.
 	 * @default undefined
@@ -42,27 +43,24 @@ export interface ReplitDatabaseClientOptions {
  * Replit Database is a simple, user-friendly key-value store inside of every Repl, every Repl can access and interact with its own unique Replit Database.
  */
 export class ReplitDatabaseClient {
-	static exceedRateLimitsStatusCode = 429;
 	#allSettled = false;
-	#retry = 1;
+	#exFetch: ExFetch;
 	#url: URL;
 	/**
 	 * Create a new Replit Database client instance.
 	 * @param {ReplitDatabaseClientOptions} [options={}] Options.
 	 */
 	constructor(options: ReplitDatabaseClientOptions = {}) {
+		if (typeof options.retry === "number") {
+			options.retry = {
+				attempts: options.retry
+			};
+		}
+		options.retry ??= {};
 		if (typeof options.allSettled === "boolean") {
 			this.#allSettled = options.allSettled;
 		} else if (typeof options.allSettled !== "undefined") {
 			throw new TypeError(`Argument \`options.allSettled\` must be type of boolean or undefined!`);
-		}
-		if (typeof options.retry === "number" && !Number.isNaN(options.retry)) {
-			if (!(Number.isSafeInteger(options.retry) && options.retry >= 0)) {
-				throw new RangeError(`Argument \`options.retry\` must be a number which is integer, positive, and safe!`);
-			}
-			this.#retry = options.retry;
-		} else if (typeof options.retry !== "undefined") {
-			throw new TypeError(`Argument \`options.retry\` must be type of number or undefined!`);
 		}
 		if (
 			options.url instanceof URL ||
@@ -88,27 +86,14 @@ export class ReplitDatabaseClient {
 		} else {
 			throw new TypeError(`Argument \`options.url\` must be instance of URL, or type of string or undefined!`);
 		}
-	}
-	/**
-	 * This provide better fetch with retry. (Will replaced when an alternative is found.)
-	 * @access private
-	 * @param {Parameters<typeof fetch>} fetchParameters `fetch` parameters.
-	 * @returns {Promise<Response>} Response.
-	 */
-	async #transaction(...fetchParameters: Parameters<typeof fetch>): Promise<Response> {
-		for (let time = 0; time < this.#retry + 1; time += 1) {
-			let response: Response = await fetch(...fetchParameters);
-			if (response.status !== ReplitDatabaseClient.exceedRateLimitsStatusCode) {
-				return response;
-			}
-			if (time < this.#retry) {
-				await new Promise((resolve): void => {
-					setTimeout(resolve, 5000);
-				});
-				continue;
-			}
-		}
-		throw new Error(`Unable to transact with Replit Database because of exceed the rate limits and retries!`);
+		this.#exFetch = new ExFetch({
+			event: options.event,
+			retry: {
+				...options.retry,
+				condition: undefined
+			},
+			timeout: options.timeout
+		});
 	}
 	/**
 	 * Clear all of the entries.
@@ -142,7 +127,7 @@ export class ReplitDatabaseClient {
 				if (!(typeof key === "string" && key.length > 0)) {
 					throw new TypeError(`Argument \`key\` must be type of string (non-empty)!`);
 				}
-				let response: Response = await this.#transaction(`${this.#url.toString()}/${key}`, {
+				let response: Response = await this.#exFetch.fetch(`${this.#url.toString()}/${key}`, {
 					method: "DELETE",
 					redirect: "error"
 				});
@@ -185,7 +170,7 @@ export class ReplitDatabaseClient {
 		if (!(typeof key === "string" && key.length > 0)) {
 			throw new TypeError(`Argument \`key\` must be type of string (non-empty)!`);
 		}
-		let response: Response = await this.#transaction(`${this.#url.toString()}/${key}`, {
+		let response: Response = await this.#exFetch.fetch(`${this.#url.toString()}/${key}`, {
 			method: "GET",
 			redirect: "error"
 		});
@@ -222,7 +207,7 @@ export class ReplitDatabaseClient {
 		let requestUrl: URL = new URL(this.#url);
 		requestUrl.searchParams.set("encode", "true");
 		requestUrl.searchParams.set("prefix", ((typeof filter === "string") ? filter : ""));
-		let response: Response = await this.#transaction(requestUrl, {
+		let response: Response = await this.#exFetch.fetch(requestUrl, {
 			method: "GET",
 			redirect: "error"
 		});
@@ -296,7 +281,7 @@ export class ReplitDatabaseClient {
 			if (!(typeof key === "string" && key.length > 0)) {
 				throw new TypeError(`Argument \`key\` must be type of string (non-empty)!`);
 			}
-			let response: Response = await this.#transaction(this.#url, {
+			let response: Response = await this.#exFetch.fetch(this.#url, {
 				body: `${encodeURIComponent(key)}=${encodeURIComponent(JSON.stringify(value))}`,
 				headers: {
 					"Content-Type": "application/x-www-form-urlencoded"

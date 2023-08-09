@@ -14,5 +14,6 @@
 				"recommended"
 			]
 		}
-	}
+	},
+	"lock": false
 }
