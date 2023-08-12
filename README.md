@@ -1,6 +1,6 @@
 # Replit Database Client (Deno)
 
-[![License](https://img.shields.io/badge/License-MIT-808080?style=flat-square "License")](./LICENSE.md)
+[⚖️ MIT](./LICENSE.md)
 
 |  | **Heat** | **Release - Latest** | **Release - Pre** |
 |:-:|:-:|:-:|:-:|
