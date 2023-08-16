@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: "Verify Deno Dependencies"
+name: "Check Deno Dependencies"
 on:
   push:
     branches:
@@ -12,8 +12,10 @@ on:
       - "opened"
       - "reopened"
       - "synchronize"
+  schedule:
+    - cron: "0 0 * * *"
   workflow_dispatch:
 jobs:
   main:
     name: "Main"
-    uses: "hugoalh/hugoalh/.github/workflows/verify-deno-dependencies.yml@main"
+    uses: "hugoalh/hugoalh/.github/workflows/check-deno-dependencies.yml@main"
