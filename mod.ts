@@ -1,4 +1,4 @@
-import { type JsonValue } from "https://deno.land/std@0.198.0/json/common.ts";
+import { type JsonValue } from "https://deno.land/std@0.199.0/json/common.ts";
 import { ExFetch, type ExFetchOptions, type ExFetchRetryOptions } from "https://deno.land/x/exfetch@v0.1.3/exfetch.ts";
 type CommonErrorType = string | Error | RangeError | ReferenceError | SyntaxError | TypeError;
 /**
