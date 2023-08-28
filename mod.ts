@@ -60,7 +60,7 @@ export class ReplitDatabaseClient {
 		if (typeof options.allSettled === "boolean") {
 			this.#allSettled = options.allSettled;
 		} else if (typeof options.allSettled !== "undefined") {
-			throw new TypeError(`Argument \`options.allSettled\` must be type of boolean or undefined!`);
+			throw new TypeError(`Argument \`options.allSettled\` is not a boolean or undefined!`);
 		}
 		if (
 			options.url instanceof URL ||
@@ -84,7 +84,7 @@ export class ReplitDatabaseClient {
 				this.#url = new URL(Deno.env.get("REPLIT_DB_URL") ?? this.#url);
 			}, 1800000);
 		} else {
-			throw new TypeError(`Argument \`options.url\` must be instance of URL, or type of string or undefined!`);
+			throw new TypeError(`Argument \`options.url\` is not a URL, string, or undefined!`);
 		}
 		this.#exFetch = new ExFetch({
 			event: options.event,
@@ -125,7 +125,7 @@ export class ReplitDatabaseClient {
 		for (let key of keys.flat(Infinity)) {
 			try {
 				if (!(typeof key === "string" && key.length > 0)) {
-					throw new TypeError(`Argument \`key\` must be type of string (non-empty)!`);
+					throw new TypeError(`Argument \`key\` is not a string (non-empty)!`);
 				}
 				let response: Response = await this.#exFetch.fetch(`${this.#url.toString()}/${key}`, {
 					method: "DELETE",
@@ -168,7 +168,7 @@ export class ReplitDatabaseClient {
 	 */
 	async get(key: string): Promise<JsonValue | undefined> {
 		if (!(typeof key === "string" && key.length > 0)) {
-			throw new TypeError(`Argument \`key\` must be type of string (non-empty)!`);
+			throw new TypeError(`Argument \`key\` is not a string (non-empty)!`);
 		}
 		let response: Response = await this.#exFetch.fetch(`${this.#url.toString()}/${key}`, {
 			method: "GET",
@@ -202,7 +202,7 @@ export class ReplitDatabaseClient {
 	keys(filter: RegExp): Promise<string[]>;
 	async keys(filter: string | RegExp = ""): Promise<string[]> {
 		if (typeof filter !== "string" && !(filter instanceof RegExp)) {
-			throw new TypeError(`Argument \`filter\`/\`prefix\` must be instance of RegExp, or type of string!`);
+			throw new TypeError(`Argument \`filter\`/\`prefix\` is not a RegExp or string!`);
 		}
 		let requestUrl: URL = new URL(this.#url);
 		requestUrl.searchParams.set("encode", "true");
@@ -279,7 +279,7 @@ export class ReplitDatabaseClient {
 		} else if (input.length === 2) {
 			let [key, value] = input as [string, JsonValue];
 			if (!(typeof key === "string" && key.length > 0)) {
-				throw new TypeError(`Argument \`key\` must be type of string (non-empty)!`);
+				throw new TypeError(`Argument \`key\` is not a string (non-empty)!`);
 			}
 			let response: Response = await this.#exFetch.fetch(this.#url, {
 				body: `${encodeURIComponent(key)}=${encodeURIComponent(JSON.stringify(value))}`,
