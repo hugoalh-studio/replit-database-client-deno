@@ -66,7 +66,7 @@ export class ReplitDatabaseClient {
 			options.url instanceof URL ||
 			typeof options.url === "string"
 		) {
-			let urlLookUp: URL = new URL(options.url);
+			const urlLookUp: URL = new URL(options.url);
 			if (!(/^https?:$/u.test(urlLookUp.protocol))) {
 				throw new SyntaxError(`\`${urlLookUp.protocol}\` is not a valid URL protocol!`);
 			}
@@ -121,13 +121,13 @@ export class ReplitDatabaseClient {
 	 */
 	async delete(...keys: string[]): Promise<void>;
 	async delete(...keys: string[] | [string[]]): Promise<void> {
-		let errorStacks: ReplitDatabaseClientErrorStack = new ReplitDatabaseClientErrorStack();
-		for (let key of keys.flat(Infinity)) {
+		const errorStacks: ReplitDatabaseClientErrorStack = new ReplitDatabaseClientErrorStack();
+		for (const key of keys.flat(Infinity)) {
 			try {
 				if (!(typeof key === "string" && key.length > 0)) {
 					throw new TypeError(`Argument \`key\` is not a string (non-empty)!`);
 				}
-				let response: Response = await this.#exFetch.fetch(`${this.#url.toString()}/${key}`, {
+				const response: Response = await this.#exFetch.fetch(`${this.#url.toString()}/${key}`, {
 					method: "DELETE",
 					redirect: "error"
 				});
@@ -170,11 +170,11 @@ export class ReplitDatabaseClient {
 		if (!(typeof key === "string" && key.length > 0)) {
 			throw new TypeError(`Argument \`key\` is not a string (non-empty)!`);
 		}
-		let response: Response = await this.#exFetch.fetch(`${this.#url.toString()}/${key}`, {
+		const response: Response = await this.#exFetch.fetch(`${this.#url.toString()}/${key}`, {
 			method: "GET",
 			redirect: "error"
 		});
-		let raw: string = await response.text();
+		const raw: string = await response.text();
 		if (!response.ok) {
 			throw new Error(`Unable to get the value from key \`${key}\` with status \`${response.status} ${response.statusText}\`: ${raw}`);
 		}
@@ -204,14 +204,14 @@ export class ReplitDatabaseClient {
 		if (typeof filter !== "string" && !(filter instanceof RegExp)) {
 			throw new TypeError(`Argument \`filter\`/\`prefix\` is not a RegExp or string!`);
 		}
-		let requestUrl: URL = new URL(this.#url);
+		const requestUrl: URL = new URL(this.#url);
 		requestUrl.searchParams.set("encode", "true");
 		requestUrl.searchParams.set("prefix", ((typeof filter === "string") ? filter : ""));
-		let response: Response = await this.#exFetch.fetch(requestUrl, {
+		const response: Response = await this.#exFetch.fetch(requestUrl, {
 			method: "GET",
 			redirect: "error"
 		});
-		let raw: string = await response.text();
+		const raw: string = await response.text();
 		if (!response.ok) {
 			throw new Error(`Unable to get keys with status \`${response.status} ${response.statusText}\`: ${raw}`);
 		}
@@ -237,10 +237,10 @@ export class ReplitDatabaseClient {
 	 */
 	list(keysFilter: RegExp): Promise<Map<string, JsonValue>>;
 	async list(keysFilter: string | RegExp = ""): Promise<Map<string, JsonValue>> {
-		let result: Map<string, JsonValue> = new Map<string, JsonValue>();
+		const result: Map<string, JsonValue> = new Map<string, JsonValue>();
 		//@ts-ignore Overload is correct.
-		for (let key of (await this.keys(keysFilter))) {
-			let value: JsonValue | undefined = await this.get(key);
+		for (const key of (await this.keys(keysFilter))) {
+			const value: JsonValue | undefined = await this.get(key);
 			if (typeof value !== "undefined") {
 				result.set(key, value);
 			}
@@ -262,8 +262,8 @@ export class ReplitDatabaseClient {
 	set(table: Map<string, JsonValue> | Record<string, JsonValue>): Promise<void>;
 	async set(...input: unknown[]): Promise<void> {
 		if (input.length === 1) {
-			let errorStacks: ReplitDatabaseClientErrorStack = new ReplitDatabaseClientErrorStack();
-			for (let [key, value] of ((input[0] instanceof Map) ? (input[0] as Map<string, JsonValue>).entries() : Object.entries(input[0] as Record<string, JsonValue>))) {
+			const errorStacks: ReplitDatabaseClientErrorStack = new ReplitDatabaseClientErrorStack();
+			for (const [key, value] of ((input[0] instanceof Map) ? (input[0] as Map<string, JsonValue>).entries() : Object.entries(input[0] as Record<string, JsonValue>))) {
 				try {
 					await this.set(key, value);
 				} catch (error) {
@@ -277,11 +277,11 @@ export class ReplitDatabaseClient {
 				throw new Error(errorStacks.print());
 			}
 		} else if (input.length === 2) {
-			let [key, value] = input as [string, JsonValue];
+			const [key, value] = input as [string, JsonValue];
 			if (!(typeof key === "string" && key.length > 0)) {
 				throw new TypeError(`Argument \`key\` is not a string (non-empty)!`);
 			}
-			let response: Response = await this.#exFetch.fetch(this.#url, {
+			const response: Response = await this.#exFetch.fetch(this.#url, {
 				body: `${encodeURIComponent(key)}=${encodeURIComponent(JSON.stringify(value))}`,
 				headers: {
 					"Content-Type": "application/x-www-form-urlencoded"
