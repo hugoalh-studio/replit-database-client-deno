@@ -1,6 +1,7 @@
 # Replit Database Client (Deno)
 
 [⚖️ MIT](./LICENSE.md)
+[![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/hugoalh-studio/replit-database-client-deno?label=Grade&logo=codefactor&logoColor=ffffff&style=flat-square "CodeFactor Grade")](https://www.codefactor.io/repository/github/hugoalh-studio/replit-database-client-deno)
 
 |  | **Heat** | **Release - Latest** | **Release - Pre** |
 |:-:|:-:|:-:|:-:|
