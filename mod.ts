@@ -1,24 +1,6 @@
-import { type JsonValue } from "https://deno.land/std@0.200.0/json/common.ts";
+import { type JsonValue } from "https://deno.land/std@0.201.0/json/common.ts";
 import { ExFetch, type ExFetchOptions, type ExFetchRetryOptions } from "https://deno.land/x/exfetch@v0.1.3/exfetch.ts";
-type CommonErrorType = string | Error | RangeError | ReferenceError | SyntaxError | TypeError;
-/**
- * Replit Database client error stack.
- * @access private
- */
-class ReplitDatabaseClientErrorStack {
-	#stack: CommonErrorType[] = [];
-	get length(): number {
-		return this.#stack.length;
-	}
-	print(): string {
-		return Array.from(new Set([...this.#stack.map((error: CommonErrorType): string => {
-			return ((typeof error === "string") ? error : `${error.name}: ${error.message}`).replace(/\r?\n/gu, " ");
-		})])).join("\n");
-	}
-	push(...error: CommonErrorType[]): void {
-		this.#stack.push(...error);
-	}
-}
+import { ErrorsStack } from "./internal/errors_stack.ts";
 /**
  * Replit Database client options.
  */
@@ -43,7 +25,7 @@ export interface ReplitDatabaseClientOptions extends Pick<ExFetchOptions, "event
  * Replit Database is a simple, user-friendly key-value store inside of every Repl, every Repl can access and interact with its own unique Replit Database.
  */
 export class ReplitDatabaseClient {
-	#allSettled = false;
+	#allSettled: boolean;
 	#exFetch: ExFetch;
 	#url: URL;
 	/**
@@ -51,17 +33,13 @@ export class ReplitDatabaseClient {
 	 * @param {ReplitDatabaseClientOptions} [options={}] Options.
 	 */
 	constructor(options: ReplitDatabaseClientOptions = {}) {
+		this.#allSettled = options.allSettled ?? false;
 		if (typeof options.retry === "number") {
 			options.retry = {
 				attempts: options.retry
 			};
 		}
 		options.retry ??= {};
-		if (typeof options.allSettled === "boolean") {
-			this.#allSettled = options.allSettled;
-		} else if (typeof options.allSettled !== "undefined") {
-			throw new TypeError(`Argument \`options.allSettled\` is not a boolean or undefined!`);
-		}
 		if (
 			options.url instanceof URL ||
 			typeof options.url === "string"
@@ -121,7 +99,7 @@ export class ReplitDatabaseClient {
 	 */
 	async delete(...keys: string[]): Promise<void>;
 	async delete(...keys: string[] | [string[]]): Promise<void> {
-		const errorStacks: ReplitDatabaseClientErrorStack = new ReplitDatabaseClientErrorStack();
+		const errorsStack: ErrorsStack = new ErrorsStack();
 		for (const key of keys.flat(Infinity)) {
 			try {
 				if (!(typeof key === "string" && key.length > 0)) {
@@ -138,11 +116,11 @@ export class ReplitDatabaseClient {
 				if (!this.#allSettled) {
 					throw error;
 				}
-				errorStacks.push(error);
+				errorsStack.push(error);
 			}
 		}
-		if (errorStacks.length > 0) {
-			throw new Error(errorStacks.print());
+		if (errorsStack.length > 0) {
+			throw new Error(errorsStack.print());
 		}
 	}
 	/**
@@ -262,7 +240,7 @@ export class ReplitDatabaseClient {
 	set(table: Map<string, JsonValue> | Record<string, JsonValue>): Promise<void>;
 	async set(...input: unknown[]): Promise<void> {
 		if (input.length === 1) {
-			const errorStacks: ReplitDatabaseClientErrorStack = new ReplitDatabaseClientErrorStack();
+			const errorsStack: ErrorsStack = new ErrorsStack();
 			for (const [key, value] of ((input[0] instanceof Map) ? (input[0] as Map<string, JsonValue>).entries() : Object.entries(input[0] as Record<string, JsonValue>))) {
 				try {
 					await this.set(key, value);
@@ -270,11 +248,11 @@ export class ReplitDatabaseClient {
 					if (!this.#allSettled) {
 						throw error;
 					}
-					errorStacks.push(error);
+					errorsStack.push(error);
 				}
 			}
-			if (errorStacks.length > 0) {
-				throw new Error(errorStacks.print());
+			if (errorsStack.length > 0) {
+				throw new Error(errorsStack.print());
 			}
 		} else if (input.length === 2) {
 			const [key, value] = input as [string, JsonValue];
