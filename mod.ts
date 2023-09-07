@@ -1,6 +1,6 @@
 import { type JsonValue } from "https://deno.land/std@0.201.0/json/common.ts";
 import { ExFetch, type ExFetchOptions, type ExFetchRetryOptions } from "https://deno.land/x/exfetch@v0.1.3/exfetch.ts";
-import { ErrorsStack } from "./internal/errors_stack.ts";
+import { ErrorsStack } from "./_internal/errors_stack.ts";
 /**
  * Replit Database client options.
  */

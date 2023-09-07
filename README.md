@@ -14,31 +14,38 @@ A Deno module of Replit Database client.
 - Additional functions to reduce the amount of the database operations.
 - Better database operations with [`hugoalh-studio/exfetch-deno`](https://github.com/hugoalh-studio/exfetch-deno).
 
-## 📓 Documentation
+## 📥 Import
 
-### Getting Started
+### Deno
 
-- Deno >= v1.35.0
+- **Target Version:** >= v1.35.0
+- **Require Permission:**
   - **`allow-env` (Allow Environment Variables):** `REPLIT_DB_URL`
   - **`allow-net` (Allow Network Addresses):** `kv.replit.com`
+- **Domain/Registry:**
+  - **Deno Land:** *N/A*
+  - **DenoPKG:**
+    ```
+    https://denopkg.com/hugoalh-studio/replit-database-client-deno[@<Tag>]/mod.ts
+    ```
+  - **GitHub Raw *\[Require Tag\]*:**
+    ```
+    https://raw.githubusercontent.com/hugoalh-studio/replit-database-client-deno/<Tag>/mod.ts
+    ```
+  - **Pax:**
+    ```
+    https://pax.deno.dev/hugoalh-studio/replit-database-client-deno[@<Tag>]/mod.ts
+    ```
 
-```ts
-/* Either */
-import { ... } from "<URL>";// Named Import
-import * as replitDatabaseClient from "<URL>";// Namespace Import
-import ReplitDatabaseClient from "<URL>";// Default Import (Class `ReplitDatabaseClient`)
-```
+> **ℹ️ Notice:** Although it is recommended to import module with main path `mod.ts` in general, it is also able to import part of the module with sub path (if available), but do not import if:
+>
+> - it's file path has an underscore prefix (e.g.: `_foo.ts`, `_util/bar.ts`), or
+> - it is a benchmark or test file (e.g.: `foo.bench.ts`, `foo.test.ts`), or
+> - it's symbol has an underscore prefix (e.g.: `export function _baz() {}`).
+>
+> These elements are not considered part of the public API, thus no stability is guaranteed for them.
 
-| **Domain / Registry** | **URL** |
-|:-:|:--|
-| Deno Land | *N/A* |
-| DenoPKG | `https://denopkg.com/hugoalh-studio/replit-database-client-deno[@<Tag>]/mod.ts` |
-| GitHub Raw **\*** | `https://raw.githubusercontent.com/hugoalh-studio/replit-database-client-deno/<Tag>/mod.ts` |
-| Pax | `https://pax.deno.dev/hugoalh-studio/replit-database-client-deno[@<Tag>]/mod.ts` |
-
-**\*:** Must provide a tag.
-
-### API
+## 🧩 API
 
 - ```ts
   class ReplitDatabaseClient {
@@ -82,9 +89,15 @@ import ReplitDatabaseClient from "<URL>";// Default Import (Class `ReplitDatabas
   }
   ```
 
-### Example
+> **ℹ️ Notice:** Documentation is included inside the script file, can view it via:
+>
+> - [Deno CLI `deno doc`](https://deno.land/manual/tools/documentation_generator)
+> - [Deno Doc Land](https://doc.deno.land)
+
+## ✍️ Example
 
 - ```ts
+  import { ReplitDatabaseClient } from "https://raw.githubusercontent.com/hugoalh-studio/replit-database-client-deno/main/mod.ts";
   const db = new ReplitDatabaseClient();
   
   await db.set("foo", "bar");
