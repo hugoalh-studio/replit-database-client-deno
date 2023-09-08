@@ -1,20 +1,15 @@
 import { type JsonValue } from "https://deno.land/std@0.201.0/json/common.ts";
-import { ExFetch, type ExFetchOptions, type ExFetchRetryOptions } from "https://deno.land/x/exfetch@v0.1.3/exfetch.ts";
+import { ExFetch, type ExFetchOptions } from "https://deno.land/x/exfetch@v0.2.0/exfetch.ts";
 import { ErrorsStack } from "./_internal/errors_stack.ts";
 /**
  * Replit Database client options.
  */
-export interface ReplitDatabaseClientOptions extends Pick<ExFetchOptions, "event" | "timeout"> {
+export interface ReplitDatabaseClientOptions extends Pick<ExFetchOptions, "event" | "retry" | "timeout" | "userAgent"> {
 	/**
 	 * For operations of batch/bulk delete, batch/bulk set, and clear, whether to await for all of the operations are all settled (resolved or rejected) instead of ignore remain operations when any of the operation is fail/reject.
 	 * @default false
 	 */
 	allSettled?: boolean;
-	/**
-	 * Retry options.
-	 * @default {}
-	 */
-	retry?: number | Omit<ExFetchRetryOptions, "condition">;
 	/**
 	 * Custom database URL.
 	 * @default undefined
@@ -34,43 +29,34 @@ export class ReplitDatabaseClient {
 	 */
 	constructor(options: ReplitDatabaseClientOptions = {}) {
 		this.#allSettled = options.allSettled ?? false;
-		if (typeof options.retry === "number") {
-			options.retry = {
-				attempts: options.retry
-			};
-		}
-		options.retry ??= {};
-		if (
-			options.url instanceof URL ||
-			typeof options.url === "string"
-		) {
-			const urlLookUp: URL = new URL(options.url);
-			if (!(/^https?:$/u.test(urlLookUp.protocol))) {
-				throw new SyntaxError(`\`${urlLookUp.protocol}\` is not a valid URL protocol!`);
-			}
-			if (!["kv.replit.com"].includes(urlLookUp.hostname)) {
-				throw new SyntaxError(`\`${urlLookUp.hostname}\` is not a valid Replit Database hostname!`);
-			}
-			this.#url = new URL(`${urlLookUp.origin}${urlLookUp.pathname}`);
-		} else if (typeof options.url === "undefined") {
+		if (typeof options.url === "undefined") {
 			try {
 				this.#url = new URL(Deno.env.get("REPLIT_DB_URL") ?? "");
 			} catch {
 				throw new Error(`Unable to access environment variable \`REPLIT_DB_URL\`, or it's value is not a valid URL!`);
 			}
 			setInterval((): void => {// This interval somehow exists in the official NodeJS library.
-				this.#url = new URL(Deno.env.get("REPLIT_DB_URL") ?? this.#url);
+				try {
+					this.#url = new URL(Deno.env.get("REPLIT_DB_URL") ?? "");
+				} catch {
+					// Continue on error.
+				}
 			}, 1800000);
 		} else {
-			throw new TypeError(`Argument \`options.url\` is not a URL, string, or undefined!`);
+			const urlLookUp: URL = new URL(options.url);
+			if (!(/^https?:$/u.test(urlLookUp.protocol))) {
+				throw new SyntaxError(`\`${urlLookUp.protocol}\` is not a valid URL protocol!`);
+			}
+			if (!(["kv.replit.com"].includes(urlLookUp.hostname))) {
+				throw new SyntaxError(`\`${urlLookUp.hostname}\` is not a valid Replit Database hostname!`);
+			}
+			this.#url = new URL(`${urlLookUp.origin}${urlLookUp.pathname}`);
 		}
 		this.#exFetch = new ExFetch({
 			event: options.event,
-			retry: {
-				...options.retry,
-				condition: undefined
-			},
-			timeout: options.timeout
+			retry: options.retry,
+			timeout: options.timeout,
+			userAgent: options.userAgent
 		});
 	}
 	/**
@@ -100,9 +86,9 @@ export class ReplitDatabaseClient {
 	async delete(...keys: string[]): Promise<void>;
 	async delete(...keys: string[] | [string[]]): Promise<void> {
 		const errorsStack: ErrorsStack = new ErrorsStack();
-		for (const key of keys.flat(Infinity)) {
+		for (const key of keys.flat(Infinity) as string[]) {
 			try {
-				if (!(typeof key === "string" && key.length > 0)) {
+				if (!(key.length > 0)) {
 					throw new TypeError(`Argument \`key\` is not a string (non-empty)!`);
 				}
 				const response: Response = await this.#exFetch.fetch(`${this.#url.toString()}/${key}`, {
@@ -145,7 +131,7 @@ export class ReplitDatabaseClient {
 	 * @returns {Promise<JsonValue | undefined>} Value.
 	 */
 	async get(key: string): Promise<JsonValue | undefined> {
-		if (!(typeof key === "string" && key.length > 0)) {
+		if (!(key.length > 0)) {
 			throw new TypeError(`Argument \`key\` is not a string (non-empty)!`);
 		}
 		const response: Response = await this.#exFetch.fetch(`${this.#url.toString()}/${key}`, {
@@ -179,9 +165,6 @@ export class ReplitDatabaseClient {
 	 */
 	keys(filter: RegExp): Promise<string[]>;
 	async keys(filter: string | RegExp = ""): Promise<string[]> {
-		if (typeof filter !== "string" && !(filter instanceof RegExp)) {
-			throw new TypeError(`Argument \`filter\`/\`prefix\` is not a RegExp or string!`);
-		}
 		const requestUrl: URL = new URL(this.#url);
 		requestUrl.searchParams.set("encode", "true");
 		requestUrl.searchParams.set("prefix", ((typeof filter === "string") ? filter : ""));
@@ -238,12 +221,12 @@ export class ReplitDatabaseClient {
 	 * @returns {Promise<void>}
 	 */
 	set(table: Map<string, JsonValue> | Record<string, JsonValue>): Promise<void>;
-	async set(...input: unknown[]): Promise<void> {
-		if (input.length === 1) {
+	async set(param0: string | Map<string, JsonValue> | Record<string, JsonValue>, value?: JsonValue): Promise<void> {
+		if (typeof value === "undefined") {
 			const errorsStack: ErrorsStack = new ErrorsStack();
-			for (const [key, value] of ((input[0] instanceof Map) ? (input[0] as Map<string, JsonValue>).entries() : Object.entries(input[0] as Record<string, JsonValue>))) {
+			for (const [rowKey, rowValue] of ((param0 instanceof Map) ? (param0 as Map<string, JsonValue>).entries() : Object.entries(param0 as Record<string, JsonValue>))) {
 				try {
-					await this.set(key, value);
+					await this.set(rowKey, rowValue);
 				} catch (error) {
 					if (!this.#allSettled) {
 						throw error;
@@ -254,9 +237,9 @@ export class ReplitDatabaseClient {
 			if (errorsStack.length > 0) {
 				throw new Error(errorsStack.print());
 			}
-		} else if (input.length === 2) {
-			const [key, value] = input as [string, JsonValue];
-			if (!(typeof key === "string" && key.length > 0)) {
+		} else {
+			const key = param0 as string;
+			if (!(key.length > 0)) {
 				throw new TypeError(`Argument \`key\` is not a string (non-empty)!`);
 			}
 			const response: Response = await this.#exFetch.fetch(this.#url, {
@@ -269,8 +252,6 @@ export class ReplitDatabaseClient {
 			if (!response.ok) {
 				throw new Error(`Unable to set key \`${key}\` with status \`${response.status} ${response.statusText}\`: ${await response.text()}`);
 			}
-		} else {
-			throw new SyntaxError(`Arguments count is not match!`);
 		}
 	}
 	/**

@@ -70,17 +70,12 @@ A Deno module of Replit Database client.
   }
   ```
 - ```ts
-  interface ReplitDatabaseClientOptions extends Pick<ExFetchOptions, "event" | "timeout"> {
+  interface ReplitDatabaseClientOptions extends Pick<ExFetchOptions, "event" | "retry" | "timeout" | "userAgent"> {
     /**
-     * For operations of clear, and batch/bulk delete and set, whether to await for all of the operations are all settled (resolved or rejected) instead of ignore remain operations when any of the operation is rejected.
+     * For operations of batch/bulk delete, batch/bulk set, and clear, whether to await for all of the operations are all settled (resolved or rejected) instead of ignore remain operations when any of the operation is fail/reject.
      * @default false
      */
     allSettled?: boolean;
-    /**
-     * Retry options.
-     * @default {}
-     */
-    retry?: Omit<ExFetchRetryOptions, "condition">;
     /**
      * Custom database URL.
      * @default undefined
