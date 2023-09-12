@@ -14,27 +14,28 @@ A Deno module of Replit Database client.
 - Additional functions to reduce the amount of the database operations.
 - Better database operations with [`hugoalh-studio/exfetch-deno`](https://github.com/hugoalh-studio/exfetch-deno).
 
-## 📥 Import
+## 🔰 Begin
 
 ### Deno
 
 - **Target Version:** >= v1.35.0
 - **Require Permission:**
-  - **`allow-env` (Allow Environment Variables):** `REPLIT_DB_URL`
-  - **`allow-net` (Allow Network Addresses):** `kv.replit.com`
+  - **`allow-env` (Allow Environment Variables):**
+    - `REPLIT_DB_URL`
+  - **`allow-net` (Allow Network Addresses):**
+    - `kv.replit.com`
 - **Domain/Registry:**
-  - **Deno Land:** *N/A*
-  - **DenoPKG:**
+  - DenoPKG
+    ```ts
+    import ... from "https://denopkg.com/hugoalh-studio/replit-database-client-deno[@<Tag>]/mod.ts";
     ```
-    https://denopkg.com/hugoalh-studio/replit-database-client-deno[@<Tag>]/mod.ts
+  - GitHub Raw *\[Require Tag\]*
+    ```ts
+    import ... from "https://raw.githubusercontent.com/hugoalh-studio/replit-database-client-deno/<Tag>/mod.ts";
     ```
-  - **GitHub Raw *\[Require Tag\]*:**
-    ```
-    https://raw.githubusercontent.com/hugoalh-studio/replit-database-client-deno/<Tag>/mod.ts
-    ```
-  - **Pax:**
-    ```
-    https://pax.deno.dev/hugoalh-studio/replit-database-client-deno[@<Tag>]/mod.ts
+  - Pax
+    ```ts
+    import ... from "https://pax.deno.dev/hugoalh-studio/replit-database-client-deno[@<Tag>]/mod.ts";
     ```
 
 > **ℹ️ Notice:** Although it is recommended to import main module with path `mod.ts` in general, it is also able to import part of the module with sub path if available, but do not import if:
