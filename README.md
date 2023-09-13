@@ -95,13 +95,13 @@ A Deno module of Replit Database client.
 - ```ts
   import { ReplitDatabaseClient } from "https://raw.githubusercontent.com/hugoalh-studio/replit-database-client-deno/main/mod.ts";
   const db = new ReplitDatabaseClient();
-  
+
   await db.set("foo", "bar");
   //=> void
-  
+
   await db.get("foo");
   //=> "bar"
-  
+
   await db.get("bar");
   //=> undefined
   ```
