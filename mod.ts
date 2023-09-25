@@ -1,10 +1,10 @@
 import { type JsonValue } from "https://deno.land/std@0.202.0/json/common.ts";
-import { ExFetch, userAgentDefault as exFetchUserAgentDefault, type ExFetchOptions } from "https://deno.land/x/exfetch@v0.2.1/exfetch.ts";
+import { ExFetch, userAgentDefault as exFetchUserAgentDefault, type ExFetchOptions } from "https://deno.land/x/exfetch@v0.2.2/exfetch.ts";
 import { ErrorsStack } from "./_internal/errors_stack.ts";
 /**
  * Replit Database client default user agent.
  */
-export const userAgentDefault = `${exFetchUserAgentDefault} ReplitDatabaseClient/0.3.0`
+export const userAgentDefault = `${exFetchUserAgentDefault} ReplitDatabaseClient/0.3.1`
 /**
  * Replit Database client options.
  */
