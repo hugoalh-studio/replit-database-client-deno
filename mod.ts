@@ -1,4 +1,4 @@
-import { type JsonValue } from "https://deno.land/std@0.202.0/json/common.ts";
+import { type JsonValue } from "https://deno.land/std@0.203.0/json/common.ts";
 import { ExFetch, userAgentDefault as exFetchUserAgentDefault, type ExFetchOptions } from "https://deno.land/x/exfetch@v0.2.2/exfetch.ts";
 import { ErrorsStack } from "./_internal/errors_stack.ts";
 /**
