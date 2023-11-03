@@ -12,7 +12,7 @@ A Deno module of Replit Database client.
 ## 🌟 Feature
 
 - Additional functions to reduce the amount of the database operations.
-- Better database operations with [`hugoalh-studio/exfetch-deno`](https://github.com/hugoalh-studio/exfetch-deno).
+- Better database operations with [exFetch](https://github.com/hugoalh-studio/exfetch-deno).
 
 ## 🔰 Begin
 
