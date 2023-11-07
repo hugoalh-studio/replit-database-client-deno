@@ -20,9 +20,9 @@ A Deno module of Replit Database client.
 
 - **Target Version:** >= v1.35.0
 - **Require Permission:**
-  - **`allow-env` (Allow Environment Variables):**
+  - **Environment (`allow-env`):**
     - `REPLIT_DB_URL`
-  - **`allow-net` (Allow Network Addresses):**
+  - **Network (`allow-net`):**
     - `kv.replit.com`
 - **Domain/Registry:**
   - DenoPKG
