@@ -1,14 +1,14 @@
-import { type JsonValue } from "https://deno.land/std@0.205.0/json/common.ts";
-import { ExFetch, userAgentDefault as exFetchUserAgentDefault, type ExFetchOptions } from "https://deno.land/x/exfetch@v0.2.3/exfetch.ts";
+import { ExFetch, userAgentDefault as exFetchUserAgentDefault, type ExFetchOptions } from "https://deno.land/x/exfetch@v0.3.0/exfetch.ts";
+import { type JSONValue } from "https://raw.githubusercontent.com/hugoalh-studio/advanced-determine-deno/v0.6.1/is_json.ts";
 import { ErrorsStack } from "./_internal/errors_stack.ts";
 /**
  * Replit Database client default user agent.
  */
-export const userAgentDefault = `${exFetchUserAgentDefault} ReplitDatabaseClient/0.3.2`
+export const userAgentDefault = `${exFetchUserAgentDefault} ReplitDatabaseClient/0.4.0`;
 /**
  * Replit Database client options.
  */
-export interface ReplitDatabaseClientOptions extends Pick<ExFetchOptions, "event" | "retry" | "timeout" | "userAgent"> {
+export interface ReplitDatabaseClientOptions extends Pick<ExFetchOptions, "retry" | "timeout" | "userAgent"> {
 	/**
 	 * For operations of batch/bulk delete, batch/bulk set, and clear, whether to await for all of the operations are all settled (resolved or rejected) instead of ignore remain operations when any of the operation is fail/reject.
 	 * @default false
@@ -57,7 +57,6 @@ export class ReplitDatabaseClient {
 			this.#url = new URL(`${urlLookUp.origin}${urlLookUp.pathname}`);
 		}
 		this.#exFetch = new ExFetch({
-			event: options.event,
 			retry: options.retry,
 			timeout: options.timeout,
 			userAgent: options.userAgent ?? userAgentDefault
@@ -116,25 +115,25 @@ export class ReplitDatabaseClient {
 	/**
 	 * List entries through iterator, optionally filter keys with prefix.
 	 * @param {string} [keysPrefix=""] Filter keys that with prefix.
-	 * @returns {Promise<IterableIterator<[string, JsonValue]>>} Entries iterator.
+	 * @returns {Promise<IterableIterator<[string, JSONValue]>>} Entries iterator.
 	 */
-	entries(keysPrefix?: string): Promise<IterableIterator<JsonValue>>;
+	async entries(keysPrefix?: string): Promise<IterableIterator<JSONValue>>;
 	/**
 	 * List entries through iterator, optionally filter keys with regular expression.
 	 * @param {RegExp} keysFilter Filter keys with regular expression.
-	 * @returns {Promise<IterableIterator<[string, JsonValue]>>} Entries iterator.
+	 * @returns {Promise<IterableIterator<[string, JSONValue]>>} Entries iterator.
 	 */
-	entries(keysFilter: RegExp): Promise<IterableIterator<JsonValue>>;
-	async entries(keysFilter: string | RegExp = ""): Promise<IterableIterator<[string, JsonValue]>> {
+	async entries(keysFilter: RegExp): Promise<IterableIterator<JSONValue>>;
+	async entries(keysFilter: string | RegExp = ""): Promise<IterableIterator<[string, JSONValue]>> {
 		//@ts-ignore Overload is correct.
 		return (await this.list(keysFilter)).entries();
 	}
 	/**
 	 * Get a value by key.
 	 * @param {string} key Key.
-	 * @returns {Promise<JsonValue | undefined>} Value.
+	 * @returns {Promise<JSONValue | undefined>} Value.
 	 */
-	async get(key: string): Promise<JsonValue | undefined> {
+	async get(key: string): Promise<JSONValue | undefined> {
 		if (!(key.length > 0)) {
 			throw new TypeError(`Argument \`key\` is not a string (non-empty)!`);
 		}
@@ -161,13 +160,13 @@ export class ReplitDatabaseClient {
 	 * @param {string} [prefix=""] Filter with prefix.
 	 * @returns {Promise<string[]>} Keys.
 	 */
-	keys(prefix?: string): Promise<string[]>;
+	async keys(prefix?: string): Promise<string[]>;
 	/**
 	 * Get all of the keys, optionally filter with regular expression.
 	 * @param {RegExp} filter Filter with regular expression.
 	 * @returns {Promise<string[]>} Keys.
 	 */
-	keys(filter: RegExp): Promise<string[]>;
+	async keys(filter: RegExp): Promise<string[]>;
 	async keys(filter: string | RegExp = ""): Promise<string[]> {
 		const requestUrl: URL = new URL(this.#url);
 		requestUrl.searchParams.set("encode", "true");
@@ -183,29 +182,30 @@ export class ReplitDatabaseClient {
 		if (raw.length === 0) {
 			return [];
 		}
-		return raw.split(/\r?\n/gu).map((key: string): string => {
+		const keys: string[] = raw.split(/\r?\n/gu).map((key: string): string => {
 			return decodeURIComponent(key);
-		}).filter((key: string): boolean => {
-			return ((filter instanceof RegExp) ? filter.test(key) : true);
 		});
+		return ((typeof filter === "string") ? keys : keys.filter((key: string): boolean => {
+			return filter.test(key);
+		}));
 	}
 	/**
 	 * List entries through `Map`, optionally filter keys with prefix.
 	 * @param {string} [keysPrefix=""] Filter keys that with prefix.
-	 * @returns {Promise<Map<string, JsonValue>>} Entries through `Map`.
+	 * @returns {Promise<Map<string, JSONValue>>} Entries through `Map`.
 	 */
-	list(keysPrefix?: string): Promise<Map<string, JsonValue>>;
+	async list(keysPrefix?: string): Promise<Map<string, JSONValue>>;
 	/**
 	 * List entries through `Map`, optionally filter keys with regular expression.
 	 * @param {RegExp} keysFilter Filter keys with regular expression.
-	 * @returns {Promise<string[]>} Keys.
+	 * @returns {Promise<Map<string, JSONValue>>} Entries through `Map`.
 	 */
-	list(keysFilter: RegExp): Promise<Map<string, JsonValue>>;
-	async list(keysFilter: string | RegExp = ""): Promise<Map<string, JsonValue>> {
-		const result: Map<string, JsonValue> = new Map<string, JsonValue>();
+	async list(keysFilter: RegExp): Promise<Map<string, JSONValue>>;
+	async list(keysFilter: string | RegExp = ""): Promise<Map<string, JSONValue>> {
+		const result: Map<string, JSONValue> = new Map<string, JSONValue>();
 		//@ts-ignore Overload is correct.
 		for (const key of (await this.keys(keysFilter))) {
-			const value: JsonValue | undefined = await this.get(key);
+			const value: JSONValue | undefined = await this.get(key);
 			if (typeof value !== "undefined") {
 				result.set(key, value);
 			}
@@ -215,20 +215,20 @@ export class ReplitDatabaseClient {
 	/**
 	 * Set a key-value.
 	 * @param {string} key Key.
-	 * @param {JsonValue} value Value.
+	 * @param {JSONValue} value Value.
 	 * @returns {Promise<void>}
 	 */
-	set(key: string, value: JsonValue): Promise<void>;
+	async set(key: string, value: JSONValue): Promise<void>;
 	/**
 	 * Set key-value.
-	 * @param {Map<string, JsonValue> | Record<string, JsonValue>} table Table.
+	 * @param {{ [key: string]: JSONValue; } | Map<string, JSONValue> | Record<string, JSONValue>} table Table.
 	 * @returns {Promise<void>}
 	 */
-	set(table: Map<string, JsonValue> | Record<string, JsonValue>): Promise<void>;
-	async set(param0: string | Map<string, JsonValue> | Record<string, JsonValue>, value?: JsonValue): Promise<void> {
+	async set(table: { [key: string]: JSONValue; } | Map<string, JSONValue> | Record<string, JSONValue>): Promise<void>;
+	async set(param0: string | { [key: string]: JSONValue; } | Map<string, JSONValue> | Record<string, JSONValue>, value?: JSONValue): Promise<void> {
 		if (typeof value === "undefined") {
 			const errorsStack: ErrorsStack = new ErrorsStack();
-			for (const [rowKey, rowValue] of ((param0 instanceof Map) ? (param0 as Map<string, JsonValue>).entries() : Object.entries(param0 as Record<string, JsonValue>))) {
+			for (const [rowKey, rowValue] of ((param0 instanceof Map) ? param0.entries() : Object.entries(param0))) {
 				try {
 					await this.set(rowKey, rowValue);
 				} catch (error) {
@@ -241,21 +241,21 @@ export class ReplitDatabaseClient {
 			if (errorsStack.length > 0) {
 				throw new Error(errorsStack.print());
 			}
-		} else {
-			const key = param0 as string;
-			if (!(key.length > 0)) {
-				throw new TypeError(`Argument \`key\` is not a string (non-empty)!`);
-			}
-			const response: Response = await this.#exFetch.fetch(this.#url, {
-				body: `${encodeURIComponent(key)}=${encodeURIComponent(JSON.stringify(value))}`,
-				headers: {
-					"Content-Type": "application/x-www-form-urlencoded"
-				},
-				method: "POST",
-			});
-			if (!response.ok) {
-				throw new Error(`Unable to set key \`${key}\` with status \`${response.status} ${response.statusText}\`: ${await response.text()}`);
-			}
+			return;
+		}
+		const key = param0 as string;
+		if (!(key.length > 0)) {
+			throw new TypeError(`Argument \`key\` is not a string (non-empty)!`);
+		}
+		const response: Response = await this.#exFetch.fetch(this.#url, {
+			body: `${encodeURIComponent(key)}=${encodeURIComponent(JSON.stringify(value))}`,
+			headers: {
+				"Content-Type": "application/x-www-form-urlencoded"
+			},
+			method: "POST",
+		});
+		if (!response.ok) {
+			throw new Error(`Unable to set key \`${key}\` with status \`${response.status} ${response.statusText}\`: ${await response.text()}`);
 		}
 	}
 	/**
@@ -270,16 +270,16 @@ export class ReplitDatabaseClient {
 	/**
 	 * Get all of the values, optionally filter keys with prefix.
 	 * @param {string} [keysPrefix=""] Filter keys that with prefix.
-	 * @returns {Promise<IterableIterator<JsonValue>>} Values.
+	 * @returns {Promise<IterableIterator<JSONValue>>} Values.
 	 */
-	values(keysPrefix?: string): Promise<IterableIterator<JsonValue>>;
+	async values(keysPrefix?: string): Promise<IterableIterator<JSONValue>>;
 	/**
 	 * Get all of the values, optionally filter keys with regular expression.
 	 * @param {RegExp} keysFilter Filter keys with regular expression.
-	 * @returns {Promise<IterableIterator<JsonValue>>} Values.
+	 * @returns {Promise<IterableIterator<JSONValue>>} Values.
 	 */
-	values(keysFilter: RegExp): Promise<IterableIterator<JsonValue>>;
-	async values(keysFilter: string | RegExp = ""): Promise<IterableIterator<JsonValue>> {
+	async values(keysFilter: RegExp): Promise<IterableIterator<JSONValue>>;
+	async values(keysFilter: string | RegExp = ""): Promise<IterableIterator<JSONValue>> {
 		//@ts-ignore Overload is correct.
 		return (await this.list(keysFilter)).values();
 	}
