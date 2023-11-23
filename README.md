@@ -69,7 +69,7 @@ A Deno module of Replit Database client.
 - ```ts
   interface ReplitDatabaseClientOptions extends Pick<ExFetchOptions, "retry" | "timeout" | "userAgent"> {
     /**
-     * For operations of batch/bulk delete, batch/bulk set, and clear, whether to await for all of the operations are all settled (resolved or rejected) instead of ignore remain operations when any of the operation is fail/reject.
+     * For batch/bulk operations (e.g.: delete and/or set multiple entries), when one of the operation is fail/fatal/reject, whether to await for all of the operations are all settled and then throw the `AggregateError` (stack of errors), instead of ignore remain operations and throw the error of the current operation.
      * @default false
      */
     allSettled?: boolean;
