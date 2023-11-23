@@ -55,23 +55,19 @@ A Deno module of Replit Database client.
     delete(key: string): Promise<void>;
     delete(keys: string[]): Promise<void>;
     delete(...keys: string[]): Promise<void>;
-    entries(keysPrefix: string = ""): Promise<IterableIterator<[string, JsonValue]>>;
-    entries(keysFilter: RegExp): Promise<IterableIterator<[string, JsonValue]>>;
-    get(key: string): Promise<JsonValue | undefined>;
+    entries(keysFilter: string | RegExp | ((key: string) => boolean) = ""): Promise<IterableIterator<[string, JSONValue]>>;
+    get(key: string): Promise<JSONValue | undefined>;
     has(key: string): Promise<boolean>;
-    keys(prefix: string = ""): Promise<string[]>;
-    keys(filter: RegExp): Promise<string[]>;
-    list(keysPrefix: string = ""): Promise<Map<string, JsonValue>>;
-    list(keysFilter: RegExp): Promise<Map<string, JsonValue>>;
-    set(key: string, value: JsonValue): Promise<void>;
-    set(table: Map<string, JsonValue> | Record<string, JsonValue>): Promise<void>;
+    keys(filter: string | RegExp | ((key: string) => boolean) = ""): Promise<string[]>;
+    list(keysFilter: string | RegExp | ((key: string) => boolean) = ""): Promise<Map<string, JSONValue>>;
+    set(key: string, value: JSONValue): Promise<void>;
+    set(table: { [key: string]: JSONValue; } | Map<string, JSONValue> | Record<string, JSONValue>): Promise<void>;
     get size(): Promise<number>;
-    values(keysPrefix: string = ""): Promise<IterableIterator<JsonValue>>;
-    values(keysFilter: RegExp): Promise<IterableIterator<JsonValue>>;
+    values(keysFilter: string | RegExp | ((key: string) => boolean) = ""): Promise<IterableIterator<JSONValue>>;
   }
   ```
 - ```ts
-  interface ReplitDatabaseClientOptions extends Pick<ExFetchOptions, "event" | "retry" | "timeout" | "userAgent"> {
+  interface ReplitDatabaseClientOptions extends Pick<ExFetchOptions, "retry" | "timeout" | "userAgent"> {
     /**
      * For operations of batch/bulk delete, batch/bulk set, and clear, whether to await for all of the operations are all settled (resolved or rejected) instead of ignore remain operations when any of the operation is fail/reject.
      * @default false
