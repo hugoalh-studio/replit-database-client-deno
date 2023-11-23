@@ -1,5 +1,5 @@
 import { ExFetch, userAgentDefault as exFetchUserAgentDefault, type ExFetchOptions } from "https://deno.land/x/exfetch@v0.3.0/exfetch.ts";
-import { type JSONValue } from "https://raw.githubusercontent.com/hugoalh-studio/advanced-determine-deno/v0.6.1/is_json.ts";
+import { type JSONValue } from "https://raw.githubusercontent.com/hugoalh-studio/advanced-determine-deno/v0.7.0/is_json.ts";
 import { ErrorsStack } from "./_internal/errors_stack.ts";
 /**
  * Replit Database client default user agent.
@@ -20,6 +20,7 @@ export interface ReplitDatabaseClientOptions extends Pick<ExFetchOptions, "retry
 	 */
 	url?: string | URL;
 }
+type ReplitDatabaseClientKeysPredicateFunction = (key: string) => boolean;
 /**
  * Replit Database is a simple, user-friendly key-value store inside of every Repl, every Repl can access and interact with its own unique Replit Database.
  */
@@ -113,19 +114,11 @@ export class ReplitDatabaseClient {
 		}
 	}
 	/**
-	 * List entries through iterator, optionally filter keys with prefix.
-	 * @param {string} [keysPrefix=""] Filter keys that with prefix.
+	 * List entries through iterator, optionally filter the keys with predicate function, prefix (string), or regular expression.
+	 * @param {string | RegExp | ReplitDatabaseClientKeysPredicateFunction} [keysFilter=""] Keys filter with predicate function, prefix (string), or regular expression.
 	 * @returns {Promise<IterableIterator<[string, JSONValue]>>} Entries iterator.
 	 */
-	async entries(keysPrefix?: string): Promise<IterableIterator<JSONValue>>;
-	/**
-	 * List entries through iterator, optionally filter keys with regular expression.
-	 * @param {RegExp} keysFilter Filter keys with regular expression.
-	 * @returns {Promise<IterableIterator<[string, JSONValue]>>} Entries iterator.
-	 */
-	async entries(keysFilter: RegExp): Promise<IterableIterator<JSONValue>>;
-	async entries(keysFilter: string | RegExp = ""): Promise<IterableIterator<[string, JSONValue]>> {
-		//@ts-ignore Overload is correct.
+	async entries(keysFilter: string | RegExp | ReplitDatabaseClientKeysPredicateFunction = ""): Promise<IterableIterator<[string, JSONValue]>> {
 		return (await this.list(keysFilter)).entries();
 	}
 	/**
@@ -156,18 +149,11 @@ export class ReplitDatabaseClient {
 		return (typeof (await this.get(key)) !== "undefined");
 	}
 	/**
-	 * Get all of the keys, optionally filter with prefix.
-	 * @param {string} [prefix=""] Filter with prefix.
+	 * Get all of the keys, optionally filter with predicate function, prefix (string), or regular expression.
+	 * @param {string | RegExp | ReplitDatabaseClientKeysPredicateFunction} [filter=""] Filter with predicate function, prefix (string), or regular expression.
 	 * @returns {Promise<string[]>} Keys.
 	 */
-	async keys(prefix?: string): Promise<string[]>;
-	/**
-	 * Get all of the keys, optionally filter with regular expression.
-	 * @param {RegExp} filter Filter with regular expression.
-	 * @returns {Promise<string[]>} Keys.
-	 */
-	async keys(filter: RegExp): Promise<string[]>;
-	async keys(filter: string | RegExp = ""): Promise<string[]> {
+	async keys(filter: string | RegExp | ReplitDatabaseClientKeysPredicateFunction = ""): Promise<string[]> {
 		const requestUrl: URL = new URL(this.#url);
 		requestUrl.searchParams.set("encode", "true");
 		requestUrl.searchParams.set("prefix", ((typeof filter === "string") ? filter : ""));
@@ -185,25 +171,24 @@ export class ReplitDatabaseClient {
 		const keys: string[] = raw.split(/\r?\n/gu).map((key: string): string => {
 			return decodeURIComponent(key);
 		});
-		return ((typeof filter === "string") ? keys : keys.filter((key: string): boolean => {
-			return filter.test(key);
-		}));
+		switch (typeof filter) {
+			case "function":
+				return keys.filter(filter);
+			case "string":
+				return keys;
+			default:
+				return keys.filter((key: string): boolean => {
+					return filter.test(key);
+				});
+		}
 	}
 	/**
-	 * List entries through `Map`, optionally filter keys with prefix.
-	 * @param {string} [keysPrefix=""] Filter keys that with prefix.
+	 * List entries through `Map`, optionally filter the keys with predicate function, prefix (string), or regular expression.
+	 * @param {string | RegExp | ReplitDatabaseClientKeysPredicateFunction} [keysFilter=""] Keys filter with predicate function, prefix (string), or regular expression.
 	 * @returns {Promise<Map<string, JSONValue>>} Entries through `Map`.
 	 */
-	async list(keysPrefix?: string): Promise<Map<string, JSONValue>>;
-	/**
-	 * List entries through `Map`, optionally filter keys with regular expression.
-	 * @param {RegExp} keysFilter Filter keys with regular expression.
-	 * @returns {Promise<Map<string, JSONValue>>} Entries through `Map`.
-	 */
-	async list(keysFilter: RegExp): Promise<Map<string, JSONValue>>;
-	async list(keysFilter: string | RegExp = ""): Promise<Map<string, JSONValue>> {
+	async list(keysFilter: string | RegExp | ReplitDatabaseClientKeysPredicateFunction = ""): Promise<Map<string, JSONValue>> {
 		const result: Map<string, JSONValue> = new Map<string, JSONValue>();
-		//@ts-ignore Overload is correct.
 		for (const key of (await this.keys(keysFilter))) {
 			const value: JSONValue | undefined = await this.get(key);
 			if (typeof value !== "undefined") {
@@ -268,19 +253,11 @@ export class ReplitDatabaseClient {
 		});
 	}
 	/**
-	 * Get all of the values, optionally filter keys with prefix.
-	 * @param {string} [keysPrefix=""] Filter keys that with prefix.
+	 * Get all of the values, optionally filter the keys with predicate function, prefix (string), or regular expression.
+	 * @param {string | RegExp | ReplitDatabaseClientKeysPredicateFunction} [keysFilter=""] Keys filter with predicate function, prefix (string), or regular expression.
 	 * @returns {Promise<IterableIterator<JSONValue>>} Values.
 	 */
-	async values(keysPrefix?: string): Promise<IterableIterator<JSONValue>>;
-	/**
-	 * Get all of the values, optionally filter keys with regular expression.
-	 * @param {RegExp} keysFilter Filter keys with regular expression.
-	 * @returns {Promise<IterableIterator<JSONValue>>} Values.
-	 */
-	async values(keysFilter: RegExp): Promise<IterableIterator<JSONValue>>;
-	async values(keysFilter: string | RegExp = ""): Promise<IterableIterator<JSONValue>> {
-		//@ts-ignore Overload is correct.
+	async values(keysFilter: string | RegExp | ReplitDatabaseClientKeysPredicateFunction = ""): Promise<IterableIterator<JSONValue>> {
 		return (await this.list(keysFilter)).values();
 	}
 }
