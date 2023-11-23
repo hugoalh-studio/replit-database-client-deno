@@ -1,6 +1,5 @@
 import { ExFetch, userAgentDefault as exFetchUserAgentDefault, type ExFetchOptions } from "https://deno.land/x/exfetch@v0.3.0/exfetch.ts";
 import { type JSONValue } from "https://raw.githubusercontent.com/hugoalh-studio/advanced-determine-deno/v0.7.0/is_json.ts";
-import { ErrorsStack } from "./_internal/errors_stack.ts";
 /**
  * Replit Database client default user agent.
  */
@@ -89,7 +88,7 @@ export class ReplitDatabaseClient {
 	 */
 	async delete(...keys: string[]): Promise<void>;
 	async delete(...keys: string[] | [string[]]): Promise<void> {
-		const errorsStack: ErrorsStack = new ErrorsStack();
+		const errorsStack: (string | Error)[] = [];
 		for (const key of keys.flat(Infinity) as string[]) {
 			try {
 				if (!(key.length > 0)) {
@@ -110,7 +109,7 @@ export class ReplitDatabaseClient {
 			}
 		}
 		if (errorsStack.length > 0) {
-			throw new Error(errorsStack.print());
+			throw new AggregateError(errorsStack);
 		}
 	}
 	/**
@@ -212,7 +211,7 @@ export class ReplitDatabaseClient {
 	async set(table: { [key: string]: JSONValue; } | Map<string, JSONValue> | Record<string, JSONValue>): Promise<void>;
 	async set(param0: string | { [key: string]: JSONValue; } | Map<string, JSONValue> | Record<string, JSONValue>, value?: JSONValue): Promise<void> {
 		if (typeof value === "undefined") {
-			const errorsStack: ErrorsStack = new ErrorsStack();
+			const errorsStack: (string | Error)[] = [];
 			for (const [rowKey, rowValue] of ((param0 instanceof Map) ? param0.entries() : Object.entries(param0))) {
 				try {
 					await this.set(rowKey, rowValue);
@@ -224,7 +223,7 @@ export class ReplitDatabaseClient {
 				}
 			}
 			if (errorsStack.length > 0) {
-				throw new Error(errorsStack.print());
+				throw new AggregateError(errorsStack);
 			}
 			return;
 		}
