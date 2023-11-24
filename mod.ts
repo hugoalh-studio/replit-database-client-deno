@@ -1,4 +1,4 @@
-import { ExFetch, userAgentDefault as exFetchUserAgentDefault, type ExFetchOptions } from "https://deno.land/x/exfetch@v0.3.0/exfetch.ts";
+import { ExFetch, userAgentDefault as exFetchUserAgentDefault, type ExFetchOptions } from "https://deno.land/x/exfetch@v0.3.1/exfetch.ts";
 import { type JSONValue } from "https://raw.githubusercontent.com/hugoalh-studio/advanced-determine-deno/v0.7.0/is_json.ts";
 /**
  * Replit Database client default user agent.
